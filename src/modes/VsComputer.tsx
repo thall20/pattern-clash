@@ -21,28 +21,26 @@ function usePatternPlayback(
 ) {
   const [playbackIndex, setPlaybackIndex] = useState<number | null>(null);
   const timerIds = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const onFinishRef = useRef(onFinish);
+
+  useEffect(() => { onFinishRef.current = onFinish; });
 
   const play = useCallback(() => {
     timerIds.current.forEach(clearTimeout);
     timerIds.current = [];
     let offset = 0;
-    pattern.forEach((idx, i) => {
-      const onId = setTimeout(() => {
-        setPlaybackIndex(idx);
-        playNote(idx);
-      }, offset);
-      const offId = setTimeout(() => {
-        setPlaybackIndex(null);
-      }, offset + litMs);
+    pattern.forEach((idx) => {
+      const onId = setTimeout(() => { setPlaybackIndex(idx); playNote(idx); }, offset);
+      const offId = setTimeout(() => { setPlaybackIndex(null); }, offset + litMs);
       timerIds.current.push(onId, offId);
       offset += stepMs;
     });
     const doneId = setTimeout(() => {
       setPlaybackIndex(null);
-      onFinish();
+      onFinishRef.current();
     }, offset + 200);
     timerIds.current.push(doneId);
-  }, [pattern, litMs, stepMs, onFinish]);
+  }, [pattern, litMs, stepMs]);
 
   useEffect(() => () => { timerIds.current.forEach(clearTimeout); }, []);
 
